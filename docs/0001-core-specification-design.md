@@ -925,7 +925,7 @@ Frontend ──→ Solid Pods (external, untuk audio)
 
 | Komponen | Versi |
 |---|---|
-| Go | 1.26 |
+| NodeJS | 26 |
 | PostgreSQL | 18.6 |
 | Community Solid Server | 7.3.0 |
 | Caddy | 2.11.8 |
