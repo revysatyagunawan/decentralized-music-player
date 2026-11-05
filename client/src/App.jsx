@@ -5,29 +5,28 @@ import AudioPlayer from './components/AudioPlayer';
 
 function App() {
   const [currentTrack, setCurrentTrack] = useState(null);
-
-  // Fungsi simulasi untuk menguji Audio Player sebelum terhubung ke Database
   const playTestSong = () => {
     setCurrentTrack({
       title: "Uji Coba Streaming Pod",
       artistName: "Musisi Lokal",
-      // Contoh URL MP3 publik yang valid untuk testing (ganti dengan URL Pod Anda nanti)
-      audio_url: "https://www.soundhelix.com/architecture/mp3-player/SoundHelix-Song-1.mp3" 
+      // Menggunakan URL MP3 publik HTTPS yang stabil
+      audio_url: "https://raw.githubusercontent.com/rafaelreis-hotmart/Audio-Sample-files/master/sample.mp3" 
     });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-slate-900 pb-32 font-sans selection:bg-cyan-500 selection:text-white">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <section>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <section className="mb-16">
           <UploadForm />
         </section>
 
-        <section className="text-center mt-12">
-          <h3 className="text-lg font-medium text-gray-700 mb-4">Uji Coba Pemutar Audio</h3>
-          <button onClick={playTestSong} className="px-6 py-2 bg-gray-800 text-white rounded shadow hover:bg-gray-700">
+        {/* Hapus bagian dummy button jika dirasa mengganggu, atau biarkan dengan style ini */}
+        <section className="text-center mt-20 max-w-md mx-auto border-t border-slate-800 pt-12">
+          <h3 className="text-lg font-medium text-slate-300 mb-6">Pengetesan Pemutar Audio</h3>
+          <button onClick={playTestSong} className="px-6 py-3 bg-slate-800 text-cyan-400 border border-slate-700 rounded-full hover:bg-slate-700 hover:border-cyan-500 transition-all shadow-lg">
             Putar Lagu Dummy
           </button>
         </section>
