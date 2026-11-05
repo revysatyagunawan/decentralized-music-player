@@ -5,6 +5,7 @@ import {
   getDefaultSession,
   logout 
 } from '@inrupt/solid-client-authn-browser';
+import api from '../lib/api';
 
 const SolidAuthContext = createContext();
 
@@ -14,13 +15,21 @@ export const SolidAuthProvider = ({ children }) => {
   const [isAuthProcessing, setIsAuthProcessing] = useState(true);
 
   useEffect(() => {
-    // Menangkap redirect dari Pod Provider setelah user login
     handleIncomingRedirect({
       restorePreviousSession: true,
-    }).then((info) => {
+    }).then(async (info) => {
       if (info?.isLoggedIn) {
         setWebId(info.webId);
         setSession(getDefaultSession());
+        
+        try {
+          await api.post('/api/auth/solid/exchange', {
+            webid: info.webId
+          });
+          console.log("Berhasil sinkronisasi sesi dengan Backend!");
+        } catch (error) {
+          console.error("Menunggu Backend: API Exchange belum siap atau terjadi error.", error);
+        }
       }
       setIsAuthProcessing(false);
     }).catch((err) => {
@@ -32,8 +41,8 @@ export const SolidAuthProvider = ({ children }) => {
   const loginWithSolid = async (oidcIssuer) => {
     if (!getDefaultSession().info.isLoggedIn) {
       await login({
-        oidcIssuer, // Contoh: "https://solidcommunity.net"
-        redirectUrl: window.location.href, // Kembali ke halaman saat ini
+        oidcIssuer,
+        redirectUrl: window.location.href,
         clientName: "Decentralized Music Player"
       });
     }
@@ -43,6 +52,12 @@ export const SolidAuthProvider = ({ children }) => {
     await logout();
     setWebId(null);
     setSession(getDefaultSession());
+    
+    try {
+      await api.post('/api/auth/logout');
+    } catch (error) {
+      console.error("Gagal menghapus sesi backend", error);
+    }
   };
 
   return (
