@@ -28,8 +28,6 @@ export async function optionalAuth(req, _res, next) {
   try {
     const payload = await verifyJWT(token);
     req.user = { userId: payload.uid, webid: payload.webid };
-  } catch {
-    // Ignore invalid token in optional mode
-  }
+  } catch {}
   next();
 }

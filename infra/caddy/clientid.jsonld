@@ -1,0 +1,12 @@
+{
+  "@context": "https://www.w3.org/ns/solid/oidc-context.jsonld",
+  "client_id": "https://charbroil-wiring-starlet.ngrok-free.dev",
+  "client_name": "Solid Music",
+  "redirect_uris": [
+    "http://localhost:5173/"
+  ],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "scope": "openid webid offline_access",
+  "token_endpoint_auth_method": "none"
+}

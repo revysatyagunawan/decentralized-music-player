@@ -4,10 +4,20 @@ import { metadataSchema } from '../validators/track.validator.js';
 import { errors } from '../utils/errors.js';
 
 export async function listTracks({ limit, offset, sort }) {
-  const [tracks, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
     trackRepo.findPublic(limit, offset, sort),
     trackRepo.countPublic(),
   ]);
+
+  const tracks = rows.map((track) => {
+    const allowed = track.stream_access === 'free';
+    return {
+      ...track,
+      stream_allowed: allowed,
+      audio_url: allowed ? track.audio_url : null,
+    };
+  });
+
   return { tracks, total };
 }
 

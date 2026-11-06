@@ -10,16 +10,13 @@ const schema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
   ALLOWED_ISSUERS: z
     .string()
-    .default('https://host.docker.internal')
-    .transform((s) =>
-      s.split(',').map((i) => i.trim()).filter(Boolean),
-    ),
+    .default('')
+    .transform((s) => s.split(',').map((i) => i.trim()).filter(Boolean)),
 });
 
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
-  console.error('Invalid env:');
-  console.error(parsed.error.flatten().fieldErrors);
+  console.error('Invalid env:', parsed.error.flatten().fieldErrors);
   process.exit(1);
 }
 

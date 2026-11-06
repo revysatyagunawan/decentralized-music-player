@@ -28,8 +28,9 @@ function deriveDisplayName(webid) {
 export async function exchange(req, res, next) {
   try {
     const { webid } = req.solid;
-    const displayName = deriveDisplayName(webid);
+    if (!webid) throw errors.unauthorized('No webid from token');
 
+    const displayName = deriveDisplayName(webid);
     const user = await userRepo.upsertByWebId(webid, displayName);
     const token = await signJWT({ uid: user.id, webid: user.webid });
 

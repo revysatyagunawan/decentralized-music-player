@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports: ["5432:5432"]
-    volumes: [pgdata:/var/lib/postgresql]
+    volumes:
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
@@ -18,7 +19,12 @@ services:
   css:
     image: solidproject/community-server:7.3.0
     command: --baseUrl https://host.docker.internal --port 3001
-    volumes: [cssdata:/data]
+    environment:
+       - NODE_TLS_REJECT_UNAUTHORIZED=0  # Izinkan self-signed cert dari Caddy
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Arahkan ke IP host Docker
+    volumes:
+      - cssdata:/data
 
   caddy:
     image: caddy:2-alpine
@@ -26,7 +32,8 @@ services:
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
-    depends_on: [css]
+    depends_on:
+      - css
 
   backend:
     build:
@@ -40,7 +47,21 @@ services:
       - /app/node_modules
     ports: ["8080:8080"]
     depends_on:
-      postgres: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      VITE_API_URL: http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports: ["5173:5173"]
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
