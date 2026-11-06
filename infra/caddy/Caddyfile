@@ -1,0 +1,4 @@
+host.docker.internal {
+    tls internal
+    reverse_proxy css:3001
+}
