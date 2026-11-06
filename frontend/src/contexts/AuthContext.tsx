@@ -52,8 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (res.ok) {
             const json = await res.json();
             setUser(json.data.user);
-          } else {
-            console.error('Exchange failed:', res.status);
           }
         }
       } catch (err) {

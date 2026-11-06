@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
 import { api, Track } from '../api';
+import { usePlayer } from '../contexts/PlayerContext';
 
 export function Catalog() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
 
   async function load() {
     setLoading(true);
-    setError(null);
     try {
       const res = await api.get('/api/tracks');
       setTracks(res.data.data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load');
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -26,39 +26,92 @@ export function Catalog() {
     return () => window.removeEventListener('tracks:refresh', handler);
   }, []);
 
-  if (loading) return <p>Loading catalog...</p>;
-  if (error) return <p className="status error">{error}</p>;
-  if (tracks.length === 0) return <p style={{ color: '#888' }}>No tracks yet. Upload one!</p>;
+  if (loading) {
+    return <div className="text-zinc-500 font-mono text-xs">FETCHING...</div>;
+  }
+
+  if (tracks.length === 0) {
+    return (
+      <div className="text-zinc-500 font-mono text-xs leading-relaxed">
+        NO TRACKS FOUND.
+        <br />
+        <span className="text-zinc-700">Upload one on the right panel.</span>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-        <h3>Catalog ({tracks.length})</h3>
-        <button onClick={load}>Refresh</button>
-      </div>
-      {tracks.map((t) => (
-        <div key={t.id} className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
-            <div>
-              <strong style={{ fontSize: 16 }}>{t.title}</strong>
-              <div style={{ fontSize: 13, color: '#888' }}>{t.artist_name}</div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      {tracks.map((t) => {
+        const isCurrent = currentTrack?.id === t.id;
+        const canPlay = t.stream_allowed && t.audio_url;
+
+        return (
+          <div
+            key={t.id}
+            onClick={() => canPlay && playTrack(t)}
+            className={`
+              group flex flex-col border p-1 transition-colors
+              ${canPlay ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}
+              ${isCurrent
+                ? 'bg-zinc-900/50 border-zinc-700'
+                : 'border-transparent hover:border-zinc-700'}
+            `}
+          >
+            {/* Cover */}
+            <div className="w-full aspect-square bg-zinc-900 border border-zinc-800 relative flex items-center justify-center overflow-hidden">
+              <span className="text-zinc-700 font-mono text-3xl font-bold">
+                {t.title.substring(0, 2).toUpperCase()}
+              </span>
+
+              {canPlay && (
+                <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <span className="text-white font-mono text-xs border border-white px-2 py-1">
+                    {isCurrent && isPlaying ? 'PAUSE' : 'PLAY'}
+                  </span>
+                </div>
+              )}
+
+              {isCurrent && isPlaying && (
+                <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-mono px-1.5 py-0.5">
+                  ▶
+                </div>
+              )}
+
+              {!canPlay && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-zinc-400 text-[9px] font-mono text-center py-0.5">
+                  {t.stream_access === 'login_required' ? 'LOGIN' : 'PAID'}
+                </div>
+              )}
             </div>
-            <span style={{ fontSize: 12, color: '#666' }}>
-              {t.duration_seconds ? `${Math.floor(t.duration_seconds / 60)}:${String(t.duration_seconds % 60).padStart(2, '0')}` : '—'}
-            </span>
+
+            {/* Metadata */}
+            <div className="mt-2 flex flex-col">
+              <span
+                className={`font-bold text-xs leading-tight truncate ${
+                  isCurrent ? 'text-accent' : 'text-zinc-100'
+                }`}
+                title={t.title}
+              >
+                {t.title}
+              </span>
+              <span className="text-[11px] text-zinc-400 truncate mt-0.5">
+                {t.artist_name}
+              </span>
+              <div className="flex justify-between items-center mt-1 font-mono text-[9px] text-zinc-600">
+                <span>{(t.genre?.[0] || 'UNKNOWN').toUpperCase()}</span>
+                <span>
+                  {t.duration_seconds
+                    ? `${Math.floor(t.duration_seconds / 60)}:${String(
+                        t.duration_seconds % 60,
+                      ).padStart(2, '0')}`
+                    : '--:--'}
+                </span>
+              </div>
+            </div>
           </div>
-          {t.stream_allowed && t.audio_url ? (
-            <audio controls src={t.audio_url} style={{ width: '100%', marginTop: 8 }} preload="metadata" />
-          ) : (
-            <p style={{ fontSize: 13, color: '#888' }}>
-              {t.stream_access === 'login_required' ? 'Login required to play' : 'Payment required'}
-            </p>
-          )}
-          <div style={{ fontSize: 11, color: '#555', marginTop: 8 }} title={t.audio_url || ''}>
-            audio: {t.audio_url || 'locked'}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
