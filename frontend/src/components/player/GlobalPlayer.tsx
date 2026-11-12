@@ -1,4 +1,5 @@
 import { usePlayer } from '../../contexts/PlayerContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 function formatTime(sec: number): string {
   if (!isFinite(sec) || sec < 0) return '0:00';
@@ -18,13 +19,14 @@ export function GlobalPlayer() {
     seek,
     setVolume,
     close,
+    toggleLike,
   } = usePlayer();
+  const { user } = useAuth();
 
   if (!currentTrack) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 h-20 bg-zinc-950 border-t border-zinc-800 flex items-center gap-4 px-4 z-50">
-      {/* Play/Pause */}
       <button
         onClick={toggle}
         className="w-10 h-10 border border-zinc-700 hover:border-accent hover:text-accent text-zinc-200 font-mono text-sm flex items-center justify-center transition-colors shrink-0"
@@ -33,7 +35,6 @@ export function GlobalPlayer() {
         {isPlaying ? '||' : '>'}
       </button>
 
-      {/* Track info */}
       <div className="w-48 min-w-0 shrink-0">
         <div className="text-xs font-bold text-zinc-100 truncate">
           {currentTrack.title}
@@ -43,7 +44,25 @@ export function GlobalPlayer() {
         </div>
       </div>
 
-      {/* Progress */}
+      <button
+        onClick={toggleLike}
+        disabled={!user}
+        className={`
+          text-lg w-8 h-10 flex items-center justify-center transition-colors shrink-0
+          ${!user ? 'opacity-30 cursor-not-allowed text-zinc-700' : 'cursor-pointer'}
+          ${currentTrack.is_liked ? 'text-accent' : 'text-zinc-600 hover:text-zinc-300'}
+        `}
+        title={
+          !user
+            ? 'Login to like'
+            : currentTrack.is_liked
+            ? 'Unlike'
+            : 'Like'
+        }
+      >
+        {currentTrack.is_liked ? '♥' : '♡'}
+      </button>
+
       <div className="flex-1 flex items-center gap-2 min-w-0">
         <span className="text-[10px] font-mono text-zinc-500 w-10 text-right">
           {formatTime(currentTime)}
@@ -61,7 +80,6 @@ export function GlobalPlayer() {
         </span>
       </div>
 
-      {/* Volume */}
       <div className="flex items-center gap-2 shrink-0">
         <span className="text-[10px] font-mono text-zinc-500">VOL</span>
         <input
@@ -75,7 +93,6 @@ export function GlobalPlayer() {
         />
       </div>
 
-      {/* Close */}
       <button
         onClick={close}
         className="text-zinc-500 hover:text-accent font-mono text-xs w-6 h-10 flex items-center justify-center transition-colors shrink-0"

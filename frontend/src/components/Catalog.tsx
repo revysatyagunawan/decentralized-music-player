@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api, Track } from '../api';
 import { usePlayer } from '../contexts/PlayerContext';
+import { LikeButton } from './LikeButton';
 
 interface Props {
   searchQuery: string;
-  onArtistClick: (webid: string) => void;
 }
 
-export function Catalog({ searchQuery, onArtistClick }: Props) {
+export function Catalog({ searchQuery }: Props) {
+  const navigate = useNavigate();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const { playTrack, currentTrack, isPlaying } = usePlayer();
@@ -38,24 +40,20 @@ export function Catalog({ searchQuery, onArtistClick }: Props) {
     return () => window.removeEventListener('tracks:refresh', handler);
   }, []);
 
-  if (loading) {
-    return <div className="text-zinc-500 font-mono text-xs">FETCHING...</div>;
+  function handleLikeUpdate(trackId: string, newCount: number, newLiked: boolean) {
+    setTracks((prev) =>
+      prev.map((t) =>
+        t.id === trackId ? { ...t, like_count: newCount, is_liked: newLiked } : t,
+      ),
+    );
   }
+
+  if (loading) return <div className="text-zinc-500 font-mono text-xs">FETCHING...</div>;
 
   if (tracks.length === 0) {
     return (
       <div className="text-zinc-500 font-mono text-xs leading-relaxed">
-        {searchQuery ? (
-          <>
-            NO RESULTS FOR "{searchQuery.toUpperCase()}".
-          </>
-        ) : (
-          <>
-            NO TRACKS FOUND.
-            <br />
-            <span className="text-zinc-700">Upload one on the right panel.</span>
-          </>
-        )}
+        {searchQuery ? `NO RESULTS FOR "${searchQuery.toUpperCase()}".` : 'NO TRACKS FOUND.'}
       </div>
     );
   }
@@ -73,9 +71,7 @@ export function Catalog({ searchQuery, onArtistClick }: Props) {
             className={`
               group flex flex-col border p-1 transition-colors
               ${canPlay ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}
-              ${isCurrent
-                ? 'bg-zinc-900/50 border-zinc-700'
-                : 'border-transparent hover:border-zinc-700'}
+              ${isCurrent ? 'bg-zinc-900/50 border-zinc-700' : 'border-transparent hover:border-zinc-700'}
             `}
           >
             <div className="w-full aspect-square bg-zinc-900 border border-zinc-800 relative flex items-center justify-center overflow-hidden">
@@ -96,40 +92,44 @@ export function Catalog({ searchQuery, onArtistClick }: Props) {
                   ▶
                 </div>
               )}
-
-              {!canPlay && (
-                <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-zinc-400 text-[9px] font-mono text-center py-0.5">
-                  {t.stream_access === 'login_required' ? 'LOGIN' : 'PAID'}
-                </div>
-              )}
             </div>
 
             <div className="mt-2 flex flex-col">
-              <span
-                className={`font-bold text-xs leading-tight truncate ${
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/tracks/${t.id}`);
+                }}
+                className={`font-bold text-xs leading-tight truncate text-left hover:text-accent transition-colors ${
                   isCurrent ? 'text-accent' : 'text-zinc-100'
                 }`}
                 title={t.title}
               >
                 {t.title}
-              </span>
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onArtistClick(t.owner_webid);
+                  navigate(`/artists/${encodeURIComponent(t.owner_webid)}`);
                 }}
                 className="text-[11px] text-zinc-400 truncate mt-0.5 text-left hover:text-accent transition-colors"
-                title={`View ${t.artist_name}`}
               >
                 {t.artist_name}
               </button>
               <div className="flex justify-between items-center mt-1 font-mono text-[9px] text-zinc-600">
-                <span>{(t.genre?.[0] || 'UNKNOWN').toUpperCase()}</span>
+                <div className="flex items-center gap-2">
+                  <LikeButton
+                    trackId={t.id}
+                    likeCount={t.like_count}
+                    isLiked={t.is_liked}
+                    onUpdate={(c, l) => handleLikeUpdate(t.id, c, l)}
+                  />
+                  <span>·</span>
+                  <span>{(t.genre?.[0] || 'UNKNOWN').toUpperCase()}</span>
+                </div>
                 <span>
                   {t.duration_seconds
-                    ? `${Math.floor(t.duration_seconds / 60)}:${String(
-                        t.duration_seconds % 60,
-                      ).padStart(2, '0')}`
+                    ? `${Math.floor(t.duration_seconds / 60)}:${String(t.duration_seconds % 60).padStart(2, '0')}`
                     : '--:--'}
                 </span>
               </div>

@@ -27,4 +27,6 @@ export interface Track {
   stream_allowed: boolean;
   audio_url: string | null;
   created_at: string;
+  like_count: number;
+  is_liked: boolean;
 }

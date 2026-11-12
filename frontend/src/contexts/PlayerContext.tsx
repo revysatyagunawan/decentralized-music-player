@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Track } from '../api';
+import { api, Track } from '../api';
 
 interface PlayerContextValue {
   currentTrack: Track | null;
@@ -19,6 +19,7 @@ interface PlayerContextValue {
   seek: (time: number) => void;
   setVolume: (vol: number) => void;
   close: () => void;
+  toggleLike: () => Promise<void>;
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
@@ -63,7 +64,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const audio = audioRef.current;
       if (!audio || !track.audio_url) return;
 
-      // Kalau track sama → toggle play/pause
       if (currentTrack?.id === track.id) {
         if (audio.paused) audio.play();
         else audio.pause();
@@ -104,12 +104,37 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const audio = audioRef.current;
     if (!audio) return;
     audio.pause();
-    audio.src = '';
+    audio.removeAttribute('src');
+    audio.load();
     setCurrentTrack(null);
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
   }, []);
+
+  const toggleLike = useCallback(async () => {
+    if (!currentTrack) return;
+    try {
+      if (currentTrack.is_liked) {
+        await api.delete(`/api/tracks/${currentTrack.id}/likes`);
+        setCurrentTrack({
+          ...currentTrack,
+          is_liked: false,
+          like_count: Math.max(0, (currentTrack.like_count || 0) - 1),
+        });
+      } else {
+        await api.post(`/api/tracks/${currentTrack.id}/likes`);
+        setCurrentTrack({
+          ...currentTrack,
+          is_liked: true,
+          like_count: (currentTrack.like_count || 0) + 1,
+        });
+      }
+      window.dispatchEvent(new Event('tracks:refresh'));
+    } catch (err) {
+      console.error('Like failed:', err);
+    }
+  }, [currentTrack]);
 
   return (
     <PlayerContext.Provider
@@ -124,6 +149,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         seek,
         setVolume,
         close,
+        toggleLike,
       }}
     >
       {children}

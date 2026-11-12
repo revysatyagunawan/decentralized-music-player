@@ -1,9 +1,10 @@
 import * as trackRepo from '../repositories/track.repo.js';
 import * as solidService from './solid.service.js';
+import * as likeService from './like.service.js';
 import { metadataSchema } from '../validators/track.validator.js';
 import { errors } from '../utils/errors.js';
 
-function enrichTrack(track) {
+function enrichStream(track) {
   const allowed = track.stream_access === 'free';
   return {
     ...track,
@@ -12,27 +13,31 @@ function enrichTrack(track) {
   };
 }
 
-export async function listTracks({ limit, offset, sort }) {
+async function enrichTracks(tracks, user) {
+  const withStream = tracks.map(enrichStream);
+  return await likeService.enrichTracksWithLikes(withStream, user);
+}
+
+export async function listTracks({ limit, offset, sort }, user) {
   const [rows, total] = await Promise.all([
     trackRepo.findPublic(limit, offset, sort),
     trackRepo.countPublic(),
   ]);
-  return { tracks: rows.map(enrichTrack), total };
+  return { tracks: await enrichTracks(rows, user), total };
 }
 
-export async function getTrackById(id) {
+export async function getTrackById(id, user) {
   const track = await trackRepo.findById(id);
   if (!track) throw errors.notFound('track_not_found', 'Track not found');
-  return enrichTrack(track);
+  const [enriched] = await enrichTracks([track], user);
+  return enriched;
 }
 
-export async function searchTracks({ q, limit, offset }) {
+export async function searchTracks({ q, limit, offset }, user) {
   const trimmed = (q || '').trim();
-  if (trimmed.length < 1) {
-    throw errors.validation({ reason: 'query_required' });
-  }
+  if (trimmed.length < 1) throw errors.validation({ reason: 'query_required' });
   const rows = await trackRepo.search(trimmed, limit, offset);
-  return rows.map(enrichTrack);
+  return await enrichTracks(rows, user);
 }
 
 function parseDuration(iso) {
@@ -48,7 +53,6 @@ function parseDuration(iso) {
 
 export async function syncFromPod(podResourceUrl, user) {
   const raw = await solidService.fetchMetadata(podResourceUrl);
-
   const parsed = metadataSchema.safeParse(raw);
   if (!parsed.success) {
     throw errors.validation({
