@@ -30,3 +30,12 @@ export interface Track {
   like_count: number;
   is_liked: boolean;
 }
+
+export interface Comment {
+  id: string;
+  user_webid: string;
+  display_name: string;
+  content: string;
+  created_at: string;
+  is_owner: boolean;
+}

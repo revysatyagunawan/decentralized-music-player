@@ -4,6 +4,7 @@ import authRoutes from './auth.routes.js';
 import tracksRoutes from './tracks.routes.js';
 import artistRoutes from './artist.routes.js';
 import likeRoutes from './like.routes.js';
+import commentRoutes from './comment.routes.js';
 import * as tracksController from '../controllers/tracks.controller.js';
 import { optionalAuth } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
@@ -19,6 +20,7 @@ const searchQuerySchema = z.object({
 router.use('/auth', authRoutes);
 router.use('/tracks', tracksRoutes);
 router.use('/', likeRoutes);
+router.use('/', commentRoutes);
 router.use('/', artistRoutes);
 router.get('/search', optionalAuth, validate(searchQuerySchema, 'query'), tracksController.searchTracks);
 

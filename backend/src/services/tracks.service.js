@@ -4,8 +4,16 @@ import * as likeService from './like.service.js';
 import { metadataSchema } from '../validators/track.validator.js';
 import { errors } from '../utils/errors.js';
 
-function enrichStream(track) {
-  const allowed = track.stream_access === 'free';
+function enrichStream(track, user) {
+  let allowed = false;
+  if (track.stream_access === 'free') {
+    allowed = true;
+  } else if (track.stream_access === 'login_required' && user) {
+    allowed = true;
+  } else if (track.stream_access === 'paid' && user) {
+    // TODO Week 4: check purchase
+    allowed = false;
+  }
   return {
     ...track,
     stream_allowed: allowed,
@@ -14,7 +22,7 @@ function enrichStream(track) {
 }
 
 async function enrichTracks(tracks, user) {
-  const withStream = tracks.map(enrichStream);
+  const withStream = tracks.map((t) => enrichStream(t, user));
   return await likeService.enrichTracksWithLikes(withStream, user);
 }
 
