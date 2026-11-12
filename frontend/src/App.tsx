@@ -1,3 +1,4 @@
+import { useState, FormEvent } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PlayerProvider } from './contexts/PlayerContext';
 import { LoginButton } from './components/LoginButton';
@@ -7,6 +8,18 @@ import { GlobalPlayer } from './components/player/GlobalPlayer';
 
 function Shell() {
   const { isLoading } = useAuth();
+  const [inputValue, setInputValue] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  function handleSearch(e: FormEvent) {
+    e.preventDefault();
+    setSearchQuery(inputValue.trim());
+  }
+
+  function clearSearch() {
+    setInputValue('');
+    setSearchQuery('');
+  }
 
   if (isLoading) {
     return (
@@ -18,7 +31,6 @@ function Shell() {
 
   return (
     <div className="h-screen flex flex-col bg-zinc-950 text-zinc-50 font-sans select-none">
-      {/* Header */}
       <header className="h-12 flex items-center justify-between px-4 border-b border-zinc-800 shrink-0">
         <div className="flex items-center gap-4">
           <h1 className="font-bold tracking-widest text-lg">
@@ -28,12 +40,38 @@ function Shell() {
             v0.1.0
           </span>
         </div>
-        <LoginButton />
+
+        <div className="flex items-center gap-3">
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="SEARCH TRACKS..."
+              className="bg-transparent border border-zinc-800 text-xs font-mono px-3 py-1 w-64 outline-none focus:border-zinc-400 text-zinc-200 placeholder:text-zinc-700"
+            />
+            <button
+              type="submit"
+              className="text-[10px] font-mono bg-zinc-50 text-zinc-950 hover:bg-accent hover:text-white px-3 py-1 transition-colors font-bold tracking-widest"
+            >
+              FIND
+            </button>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="text-[10px] font-mono text-zinc-500 hover:text-accent px-2 py-1 transition-colors"
+                title="Clear"
+              >
+                X
+              </button>
+            )}
+          </form>
+          <LoginButton />
+        </div>
       </header>
 
-      {/* Main: 3 columns */}
       <main className="flex-1 flex overflow-hidden pb-20">
-        {/* Left: Now Playing / Manifesto */}
         <aside className="w-[280px] border-r border-zinc-800 flex flex-col shrink-0">
           <div className="p-4 border-b border-zinc-800">
             <div className="text-[10px] font-mono text-zinc-500 mb-2 tracking-widest">
@@ -55,27 +93,19 @@ to let your friends hear it.
 · Your Pod, your rules
 · No central authority
 · No paywall for listening
-· Files you can take anywhere
-
-// SOURCE
-
-Solid Protocol
-schema.org/MusicRecording
-DPoP + Solid-OIDC`}
+· Files you can take anywhere`}
           </div>
         </aside>
 
-        {/* Center: Catalog */}
         <section className="flex-1 flex flex-col min-w-0">
           <div className="h-8 border-b border-zinc-800 flex items-center px-4 text-[10px] font-mono text-zinc-500 tracking-widest">
-            LIBRARY / TRACKS
+            {searchQuery ? `SEARCH: ${searchQuery.toUpperCase()}` : 'LIBRARY / TRACKS'}
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <Catalog />
+            <Catalog searchQuery={searchQuery} />
           </div>
         </section>
 
-        {/* Right: Upload / Actions */}
         <aside className="w-[320px] border-l border-zinc-800 flex flex-col shrink-0">
           <div className="h-8 border-b border-zinc-800 flex items-center px-4 text-[10px] font-mono text-zinc-500 tracking-widest">
             PUBLISH

@@ -31,6 +31,35 @@ export async function countPublic() {
   return rows[0].total;
 }
 
+export async function search(query, limit = 20, offset = 0) {
+  const sanitized = query
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => `${w}:*`)
+    .join(' & ');
+
+  if (!sanitized) return [];
+
+  const { rows } = await pool.query(
+    `SELECT id, title, artist_name, owner_webid, cover_url, duration_seconds,
+            genre, stream_access, audio_url, status, created_at,
+            ts_rank(search_vector, to_tsquery('simple', $1)) AS rank
+     FROM tracks
+     WHERE deleted_at IS NULL AND visibility = 'public' AND status = 'available'
+       AND (
+         search_vector @@ to_tsquery('simple', $1)
+         OR title ILIKE '%' || $4 || '%'
+         OR artist_name ILIKE '%' || $4 || '%'
+       )
+     ORDER BY rank DESC NULLS LAST, created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [sanitized, limit, offset, query],
+  );
+  return rows;
+}
+
 export async function findById(id) {
   const { rows } = await pool.query(
     `SELECT * FROM tracks WHERE id = $1 AND deleted_at IS NULL`,

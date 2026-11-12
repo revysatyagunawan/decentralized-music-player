@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { api, Track } from '../api';
 import { usePlayer } from '../contexts/PlayerContext';
 
-export function Catalog() {
+interface Props {
+  searchQuery: string;
+}
+
+export function Catalog({ searchQuery }: Props) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const { playTrack, currentTrack, isPlaying } = usePlayer();
@@ -10,7 +14,11 @@ export function Catalog() {
   async function load() {
     setLoading(true);
     try {
-      const res = await api.get('/api/tracks');
+      const trimmed = searchQuery.trim();
+      const endpoint = trimmed
+        ? `/api/search?q=${encodeURIComponent(trimmed)}`
+        : '/api/tracks';
+      const res = await api.get(endpoint);
       setTracks(res.data.data);
     } catch (err) {
       console.error(err);
@@ -21,6 +29,9 @@ export function Catalog() {
 
   useEffect(() => {
     load();
+  }, [searchQuery]);
+
+  useEffect(() => {
     const handler = () => load();
     window.addEventListener('tracks:refresh', handler);
     return () => window.removeEventListener('tracks:refresh', handler);
@@ -33,9 +44,19 @@ export function Catalog() {
   if (tracks.length === 0) {
     return (
       <div className="text-zinc-500 font-mono text-xs leading-relaxed">
-        NO TRACKS FOUND.
-        <br />
-        <span className="text-zinc-700">Upload one on the right panel.</span>
+        {searchQuery ? (
+          <>
+            NO RESULTS FOR "{searchQuery.toUpperCase()}".
+            <br />
+            <span className="text-zinc-700">Try a different query.</span>
+          </>
+        ) : (
+          <>
+            NO TRACKS FOUND.
+            <br />
+            <span className="text-zinc-700">Upload one on the right panel.</span>
+          </>
+        )}
       </div>
     );
   }
@@ -58,7 +79,6 @@ export function Catalog() {
                 : 'border-transparent hover:border-zinc-700'}
             `}
           >
-            {/* Cover */}
             <div className="w-full aspect-square bg-zinc-900 border border-zinc-800 relative flex items-center justify-center overflow-hidden">
               <span className="text-zinc-700 font-mono text-3xl font-bold">
                 {t.title.substring(0, 2).toUpperCase()}
@@ -85,7 +105,6 @@ export function Catalog() {
               )}
             </div>
 
-            {/* Metadata */}
             <div className="mt-2 flex flex-col">
               <span
                 className={`font-bold text-xs leading-tight truncate ${

@@ -3,35 +3,36 @@ import * as solidService from './solid.service.js';
 import { metadataSchema } from '../validators/track.validator.js';
 import { errors } from '../utils/errors.js';
 
+function enrichTrack(track) {
+  const allowed = track.stream_access === 'free';
+  return {
+    ...track,
+    stream_allowed: allowed,
+    audio_url: allowed ? track.audio_url : null,
+  };
+}
+
 export async function listTracks({ limit, offset, sort }) {
   const [rows, total] = await Promise.all([
     trackRepo.findPublic(limit, offset, sort),
     trackRepo.countPublic(),
   ]);
-
-  const tracks = rows.map((track) => {
-    const allowed = track.stream_access === 'free';
-    return {
-      ...track,
-      stream_allowed: allowed,
-      audio_url: allowed ? track.audio_url : null,
-    };
-  });
-
-  return { tracks, total };
+  return { tracks: rows.map(enrichTrack), total };
 }
 
 export async function getTrackById(id) {
   const track = await trackRepo.findById(id);
   if (!track) throw errors.notFound('track_not_found', 'Track not found');
+  return enrichTrack(track);
+}
 
-  // Week 1: semua stream_access default 'free' → selalu allowed
-  // (logika login_required/paid masuk di Minggu 2)
-  return {
-    ...track,
-    stream_allowed: track.stream_access === 'free',
-    audio_url: track.stream_access === 'free' ? track.audio_url : null,
-  };
+export async function searchTracks({ q, limit, offset }) {
+  const trimmed = (q || '').trim();
+  if (trimmed.length < 1) {
+    throw errors.validation({ reason: 'query_required' });
+  }
+  const rows = await trackRepo.search(trimmed, limit, offset);
+  return rows.map(enrichTrack);
 }
 
 function parseDuration(iso) {
@@ -60,7 +61,6 @@ export async function syncFromPod(podResourceUrl, user) {
   }
   const meta = parsed.data;
 
-  // WebID normalization: strip trailing slash untuk perbandingan
   const normalizedOwner = meta.byArtist['@id'].replace(/\/$/, '');
   if (normalizedOwner !== user.webid) {
     throw errors.forbidden('You can only publish tracks owned by your WebID');

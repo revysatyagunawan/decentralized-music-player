@@ -1,5 +1,5 @@
 import * as tracksService from '../services/tracks.service.js';
-import { ok, created } from '../utils/response.js';
+import { ok } from '../utils/response.js';
 
 export async function listTracks(req, res, next) {
   try {
@@ -20,11 +20,21 @@ export async function getTrackById(req, res, next) {
   }
 }
 
+export async function searchTracks(req, res, next) {
+  try {
+    const { q, limit, offset } = req.query;
+    const tracks = await tracksService.searchTracks({ q, limit, offset });
+    ok(res, tracks, { query: q, count: tracks.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function syncTrack(req, res, next) {
   try {
     const { pod_resource_url } = req.body;
     const track = await tracksService.syncFromPod(pod_resource_url, req.user);
-    created(res, track);
+    res.status(201).json({ data: track });
   } catch (err) {
     next(err);
   }
