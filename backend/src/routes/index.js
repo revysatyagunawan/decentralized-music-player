@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import authRoutes from './auth.routes.js';
 import tracksRoutes from './tracks.routes.js';
+import artistRoutes from './artist.routes.js';
 import * as tracksController from '../controllers/tracks.controller.js';
 import { validate } from '../middlewares/validate.middleware.js';
 
@@ -15,6 +16,7 @@ const searchQuerySchema = z.object({
 
 router.use('/auth', authRoutes);
 router.use('/tracks', tracksRoutes);
+router.use('/', artistRoutes);
 router.get('/search', validate(searchQuerySchema, 'query'), tracksController.searchTracks);
 
 export default router;

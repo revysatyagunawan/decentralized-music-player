@@ -31,6 +31,35 @@ export async function countPublic() {
   return rows[0].total;
 }
 
+export async function findByOwner(webid, limit = 50, offset = 0) {
+  const { rows } = await pool.query(
+    `SELECT id, title, artist_name, owner_webid, cover_url, duration_seconds,
+            genre, stream_access, audio_url, status, created_at
+     FROM tracks
+     WHERE owner_webid = $1
+       AND deleted_at IS NULL
+       AND visibility = 'public'
+       AND status = 'available'
+     ORDER BY created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [webid, limit, offset],
+  );
+  return rows;
+}
+
+export async function countByOwner(webid) {
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS total
+     FROM tracks
+     WHERE owner_webid = $1
+       AND deleted_at IS NULL
+       AND visibility = 'public'
+       AND status = 'available'`,
+    [webid],
+  );
+  return rows[0].total;
+}
+
 export async function search(query, limit = 20, offset = 0) {
   const sanitized = query
     .toLowerCase()

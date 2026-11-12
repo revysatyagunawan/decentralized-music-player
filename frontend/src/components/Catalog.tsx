@@ -4,9 +4,10 @@ import { usePlayer } from '../contexts/PlayerContext';
 
 interface Props {
   searchQuery: string;
+  onArtistClick: (webid: string) => void;
 }
 
-export function Catalog({ searchQuery }: Props) {
+export function Catalog({ searchQuery, onArtistClick }: Props) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const { playTrack, currentTrack, isPlaying } = usePlayer();
@@ -47,8 +48,6 @@ export function Catalog({ searchQuery }: Props) {
         {searchQuery ? (
           <>
             NO RESULTS FOR "{searchQuery.toUpperCase()}".
-            <br />
-            <span className="text-zinc-700">Try a different query.</span>
           </>
         ) : (
           <>
@@ -114,9 +113,16 @@ export function Catalog({ searchQuery }: Props) {
               >
                 {t.title}
               </span>
-              <span className="text-[11px] text-zinc-400 truncate mt-0.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onArtistClick(t.owner_webid);
+                }}
+                className="text-[11px] text-zinc-400 truncate mt-0.5 text-left hover:text-accent transition-colors"
+                title={`View ${t.artist_name}`}
+              >
                 {t.artist_name}
-              </span>
+              </button>
               <div className="flex justify-between items-center mt-1 font-mono text-[9px] text-zinc-600">
                 <span>{(t.genre?.[0] || 'UNKNOWN').toUpperCase()}</span>
                 <span>

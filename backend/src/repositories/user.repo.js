@@ -24,3 +24,12 @@ export async function findById(id) {
   );
   return rows[0] || null;
 }
+
+export async function findByWebId(webid) {
+  const { rows } = await pool.query(
+    `SELECT id, webid, display_name, bio, avatar_url, is_admin, created_at
+     FROM users WHERE webid = $1`,
+    [webid],
+  );
+  return rows[0] || null;
+}

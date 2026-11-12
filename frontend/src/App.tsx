@@ -4,21 +4,33 @@ import { PlayerProvider } from './contexts/PlayerContext';
 import { LoginButton } from './components/LoginButton';
 import { UploadForm } from './components/UploadForm';
 import { Catalog } from './components/Catalog';
+import { ArtistProfile } from './components/ArtistProfile';
 import { GlobalPlayer } from './components/player/GlobalPlayer';
 
 function Shell() {
   const { isLoading } = useAuth();
   const [inputValue, setInputValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [artistWebid, setArtistWebid] = useState<string | null>(null);
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
+    setArtistWebid(null);
     setSearchQuery(inputValue.trim());
   }
 
   function clearSearch() {
     setInputValue('');
     setSearchQuery('');
+    setArtistWebid(null);
+  }
+
+  function openArtist(webid: string) {
+    setArtistWebid(webid);
+  }
+
+  function backToCatalog() {
+    setArtistWebid(null);
   }
 
   if (isLoading) {
@@ -56,12 +68,11 @@ function Shell() {
             >
               FIND
             </button>
-            {searchQuery && (
+            {(searchQuery || artistWebid) && (
               <button
                 type="button"
                 onClick={clearSearch}
                 className="text-[10px] font-mono text-zinc-500 hover:text-accent px-2 py-1 transition-colors"
-                title="Clear"
               >
                 X
               </button>
@@ -99,10 +110,18 @@ to let your friends hear it.
 
         <section className="flex-1 flex flex-col min-w-0">
           <div className="h-8 border-b border-zinc-800 flex items-center px-4 text-[10px] font-mono text-zinc-500 tracking-widest">
-            {searchQuery ? `SEARCH: ${searchQuery.toUpperCase()}` : 'LIBRARY / TRACKS'}
+            {artistWebid
+              ? 'ARTIST PROFILE'
+              : searchQuery
+              ? `SEARCH: ${searchQuery.toUpperCase()}`
+              : 'LIBRARY / TRACKS'}
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <Catalog searchQuery={searchQuery} />
+            {artistWebid ? (
+              <ArtistProfile webid={artistWebid} onBack={backToCatalog} />
+            ) : (
+              <Catalog searchQuery={searchQuery} onArtistClick={openArtist} />
+            )}
           </div>
         </section>
 
