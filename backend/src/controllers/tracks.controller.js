@@ -42,3 +42,34 @@ export async function syncTrack(req, res, next) {
     next(err);
   }
 }
+
+export async function listMine(req, res, next) {
+  try {
+    const tracks = await tracksService.listOwnTracks(req.user);
+    ok(res, tracks, { total: tracks.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateTrack(req, res, next) {
+  try {
+    const track = await tracksService.updateTrack(
+      req.params.id,
+      req.user,
+      req.body,
+    );
+    ok(res, track);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteTrack(req, res, next) {
+  try {
+    const result = await tracksService.deleteTrack(req.params.id, req.user);
+    ok(res, result);
+  } catch (err) {
+    next(err);
+  }
+}

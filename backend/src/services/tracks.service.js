@@ -99,3 +99,32 @@ export async function syncFromPod(podResourceUrl, user) {
     isrc_code: meta.isrcCode || null,
   });
 }
+
+export async function listOwnTracks(user) {
+  const rows = await trackRepo.findByOwnerId(user.userId);
+  return rows.map((t) => enrichStream(t, user));
+}
+
+export async function updateTrack(id, user, updates) {
+  const track = await trackRepo.findById(id);
+  if (!track) throw errors.notFound('track_not_found', 'Track not found');
+  if (track.owner_webid !== user.webid) {
+    throw errors.forbidden('You can only edit your own tracks');
+  }
+
+  const updated = await trackRepo.updateTrack(id, updates);
+  if (!updated) throw errors.validation({ reason: 'no_valid_fields' });
+
+  return enrichStream(updated, user);
+}
+
+export async function deleteTrack(id, user) {
+  const track = await trackRepo.findById(id);
+  if (!track) throw errors.notFound('track_not_found', 'Track not found');
+  if (track.owner_webid !== user.webid) {
+    throw errors.forbidden('You can only delete your own tracks');
+  }
+
+  await trackRepo.softDelete(id);
+  return { deleted: true };
+}

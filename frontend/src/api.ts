@@ -29,6 +29,14 @@ export interface Track {
   created_at: string;
   like_count: number;
   is_liked: boolean;
+  // Dashboard-only fields (may be undefined in public endpoints)
+  description?: string | null;
+  download_enabled?: boolean;
+  download_price_cents?: number;
+  download_currency?: string;
+  tip_enabled?: boolean;
+  visibility?: 'public' | 'private' | 'unlisted';
+  status?: string;
 }
 
 export interface Comment {

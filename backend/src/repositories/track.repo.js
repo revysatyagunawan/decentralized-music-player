@@ -137,3 +137,67 @@ export async function upsertFromPod(data) {
   );
   return rows[0];
 }
+
+export async function findByOwnerId(ownerId) {
+  const { rows } = await pool.query(
+    `SELECT id, title, artist_name, owner_webid, cover_url, duration_seconds,
+            genre, stream_access, download_enabled, download_price_cents,
+            download_currency, tip_enabled, visibility, status,
+            audio_url, created_at
+     FROM tracks
+     WHERE owner_id = $1 AND deleted_at IS NULL
+     ORDER BY created_at DESC`,
+    [ownerId],
+  );
+  return rows;
+}
+
+export async function updateTrack(id, updates) {
+  const fields = [];
+  const values = [];
+  let idx = 1;
+
+  const allowed = [
+    'title',
+    'artist_name',
+    'description',
+    'genre',
+    'stream_access',
+    'download_enabled',
+    'download_price_cents',
+    'download_currency',
+    'tip_enabled',
+    'visibility',
+  ];
+
+  for (const key of allowed) {
+    if (updates[key] !== undefined) {
+      fields.push(`${key} = $${idx}`);
+      values.push(updates[key]);
+      idx++;
+    }
+  }
+
+  if (fields.length === 0) return null;
+
+  values.push(id);
+
+  const { rows } = await pool.query(
+    `UPDATE tracks
+     SET ${fields.join(', ')}, updated_at = now()
+     WHERE id = $${idx} AND deleted_at IS NULL
+     RETURNING *`,
+    values,
+  );
+  return rows[0] || null;
+}
+
+export async function softDelete(id) {
+  const { rowCount } = await pool.query(
+    `UPDATE tracks
+     SET deleted_at = now(), status = 'deleted', updated_at = now()
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [id],
+  );
+  return rowCount > 0;
+}
