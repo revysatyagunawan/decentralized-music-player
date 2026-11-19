@@ -1,143 +1,69 @@
-# Decentralized Music Player (Solid DApp)
+# Solid Music
 
-A decentralized, hybrid music streaming application built on top of the **Solid Protocol**. This platform separates music storage and data ownership from the application layer, allowing artists to host their own audio files and metadata on their personal **Solid Pods** while providing listeners with seamless music discovery and streaming.
+An alternative music platform where musicians own their data.
 
----
+Audio files live in the musician's **Solid Pod**, not on our servers.
+We provide the catalog, the player, and the discovery—but never the enclosure.
 
-## Features
+## Manifesto
 
-- **Decentralized Ownership:** Audio files (`.mp3`) and metadata (`.ttl`) remain strictly inside the artist's Solid Pod.
-- **Hybrid Architecture:** Uses a centralized indexer (Express.js + PostgreSQL) purely for fast global search and metadata discovery without storing media assets.
-- **WebID Authentication:** Seamless login via Solid Identity Providers (IdP).
-- **Client-Side Direct Streaming:** Audio is streamed directly from the artist's Pod URL to the listener's browser.
-- **Personalized Playlists:** Listener playlists are saved as RDF linked data directly on the listener's Pod.
-- **Public & Authenticated Access:** Anyone can stream public tracks without logging in; authenticated users can access interactive and social features.
+> If you own your music, you don't need capitalists to let your friends hear it.
 
----
+- **Your Pod, your rules** — audio is stored in your personal Solid Pod
+- **No central authority** — anyone can run their own Pod, or use a provider
+- **No paywall for listening** — free tracks stream directly from the Pod
+- **Files you can take anywhere** — exit is always possible (see [docs/exit-strategy.md](docs/exit-strategy.md))
 
-## System Architecture
+## What This App Does
 
-```
-+-----------------------------------------------------------------------+
-|                              CLIENT                                   |
-|   React DApp (Audio Player, WebID Auth, Pod CRUD, Search UI)          |
-+-----------------------------------------------------------------------+
-             |                         |                     |
-   1. OAuth WebID Login       4. Stream Audio (GET)   3. Query Search (GET)
-             |                         |                     |
-             v                         v                     v
-+------------------------+   +-------------------+   +------------------+
-| Solid Identity Provider|   |  Artist Solid Pod |   | Express.js API   |
-|     (e.g., Inrupt)     |   | (Media & RDF Data)|   | & PostgreSQL     |
-+------------------------+   +-------------------+   | (Global Index)   |
-                                                     +------------------+
-```
+- Indexes public music metadata from Solid Pods into a searchable catalog
+- Streams audio directly from Pods (no proxying, no caching of files)
+- Provides social features (follow, like, comments)
+- Supports multi-provider login (Solid Community, Inrupt, Private Data Pod, self-hosted)
 
----
+## What This App Does NOT Do
 
-## Repository Structure
+- Host your audio files
+- Lock you into a single Pod provider
+- Take a cut from your music (no royalty, no subscription)
+- Own your data
 
-```text
-decentralized-music-player/
-├── client/                     # React Frontend (Vite + Tailwind CSS)
-│   ├── src/
-│   │   ├── assets/             # Images and static assets
-│   │   ├── components/         # Reusable UI components (Player, Navbar, Cards)
-│   │   ├── contexts/           # React Contexts (SolidAuth, AudioPlayer)
-│   │   ├── lib/                # Solid SDK helper functions and API clients
-│   │   ├── pages/              # Page views (Home, Search, Profile, Upload)
-│   │   ├── App.jsx             # Main Router
-│   │   └── main.jsx            # Entry point
-│   ├── package.json
-│   └── vite.config.js
-│
-├── server/                     # Express Backend Indexer
-│   ├── src/
-│   │   ├── config/             # Database connection setup (PostgreSQL)
-│   │   ├── controllers/        # Route controllers (Search, Track Registration)
-│   │   ├── models/             # Database models / queries
-│   │   ├── routes/             # API endpoint definitions
-│   │   └── index.js            # Express server entry point
-│   └── package.json
-│
-├── docs/                       # Project documentation & presentation slides
-└── README.md
-```
+## Quick Start (Development)
 
----
+Prerequisites: Docker, Node.js 22+, `ffmpeg` (for testing uploads)
 
-## Getting Started
-
-### Prerequisites
-
-- **Node.js** (v18 or higher)
-- **npm** or **yarn**
-- **PostgreSQL** (installed locally or running via Docker)
-- A **Solid Pod** account (e.g., from [solidcommunity.net](https://solidcommunity.net/)) for testing upload & auth features.
-
----
-
-### Setup & Installation
-
-#### 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/decentralized-music-player.git
-cd decentralized-music-player
+cp .env.example .env
+# Edit .env, replace JWT_SECRET with: openssl rand -base64 32
+
+docker compose up -d --build
 ```
 
-#### 2. Configure and start the Backend Server
-```bash
-cd server
-npm install
+Open:
+- Frontend: http://localhost:5173
+- Backend health: http://localhost:8080/health
+- Solid Pod provider: https://solidcommunity.net (register a free account)
+
+## Architecture
+
+```
+Frontend (React + Vite) → Backend (Node + Express) → PostgreSQL
+                       ↘                    ↘
+                        Solid Pod (user)      Catalog index
+
+Audio delivery: Browser ← Solid Pod (direct, no backend in between)
 ```
 
-Create a `.env` file inside the `server/` directory:
-```env
-PORT=5000
-DATABASE_URL=postgresql://user:password@localhost:5432/solid_music_db
-```
+## Tech Stack
 
-Run database migrations/scripts (if applicable) and start the server:
-```bash
-npm run dev
-```
-
-#### 3. Configure and start the Frontend Client
-Open a new terminal window:
-```bash
-cd client
-npm install
-```
-
-Create a `.env` file inside the `client/` directory:
-```env
-VITE_API_BASE_URL=http://localhost:5000/api
-```
-
-Start the Vite development server:
-```bash
-npm run dev
-```
-
-The application will be running at `http://localhost:5173`.
-
----
-
-## Ontologies & Standards Used
-
-- **Schema.org:** `MusicRecording`, `MusicAlbum`, `MusicGroup`
-- **Solid Web Access Control (WAC):** For managing read/write permissions on Pod resources.
-- **RDF / Turtle (`.ttl`):** Linked Data format used for storing track metadata and user playlists.
-
----
-
-## Contributors
-
-- **Ravif Gayuh Wicaksono** (24/540583/PA/22953)
-- **Revy Gunawan Satya** (24/538296/PA/22835)
-
----
+- **Frontend:** React 18, Vite, Tailwind CSS, TypeScript
+- **Backend:** Node.js 22, Express, PostgreSQL, `jose` (JWT/DPoP)
+- **Solid:** `@inrupt/solid-client` v2, `@inrupt/solid-client-authn-browser` v2
+- **Auth:** Solid-OIDC with DPoP verification
+- **Deployment:** Docker Compose, Caddy (production)
 
 ## License
 
-This project is developed for educational purposes under the **Platform Based Software Engineering** course.
+AGPL-3.0 — see [LICENSE](LICENSE)
+
+You are free to fork, self-host, and modify. If you run this as a service, you must share your modifications.

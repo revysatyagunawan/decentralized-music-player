@@ -1,0 +1,14 @@
+host.docker.internal {
+    tls internal
+
+    # Layani file clientid.jsonld secara langsung
+    handle /clientid.jsonld* {
+        root * /etc/caddy
+        file_server
+    }
+
+    # Sisanya arahkan ke CSS
+    handle {
+        reverse_proxy css:3001
+    }
+}
