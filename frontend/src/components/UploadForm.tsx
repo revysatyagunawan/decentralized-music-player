@@ -27,6 +27,9 @@ export function UploadForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return setStatus({ type: 'error', msg: 'NO FILE SELECTED' });
+    if (!user || !session) {
+      return setStatus({ type: 'error', msg: 'LOGIN REQUIRED TO UPLOAD' });
+    }
 
     setLoading(true);
     setStatus({ type: 'info', msg: 'READING FILE...' });

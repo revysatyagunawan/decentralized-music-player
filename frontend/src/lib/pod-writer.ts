@@ -3,6 +3,8 @@ import {
   overwriteFile,
   getSolidDatasetWithAcl,
   getResourceAcl,
+  hasAccessibleAcl,
+  hasFallbackAcl,
   createAcl,
   createAclFromFallbackAcl,
   setPublicResourceAccess,
@@ -57,18 +59,26 @@ async function makePublicRead(resourceUrl: string, fetch: typeof globalThis.fetc
   // Approach 1: Inrupt ACL API
   try {
     const withAcl = await getSolidDatasetWithAcl(resourceUrl, { fetch });
-    let acl = getResourceAcl(withAcl);
-
-    if (!acl) {
-      try {
-        acl = createAclFromFallbackAcl(withAcl);
-      } catch {
-        acl = createAcl(new URL(resourceUrl));
-      }
+    if (!hasAccessibleAcl(withAcl)) {
+      throw new Error('Resource ACL is not accessible');
     }
 
-    acl = setPublicResourceAccess(acl, { read: true });
-    acl = setPublicDefaultAccess(acl, { read: true });
+    const resourceAcl = getResourceAcl(withAcl);
+    let acl = resourceAcl;
+    if (!acl && hasFallbackAcl(withAcl)) {
+      acl = createAclFromFallbackAcl(withAcl);
+    } else if (!acl) {
+      acl = createAcl(withAcl);
+    }
+
+    const publicReadAccess = {
+      read: true,
+      append: false,
+      write: false,
+      control: false,
+    };
+    acl = setPublicResourceAccess(acl, publicReadAccess);
+    acl = setPublicDefaultAccess(acl, publicReadAccess);
     await saveAclFor(withAcl, acl, { fetch });
     return;
   } catch (err) {
