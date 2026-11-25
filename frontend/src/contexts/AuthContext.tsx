@@ -44,7 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(s);
 
         if (s.info.isLoggedIn) {
-          const res = await s.fetch(`${API_URL}/api/auth/solid/exchange`, {
+          const apiOrigin = API_URL || window.location.origin;
+          const exchangeUrl = new URL('/api/auth/solid/exchange', apiOrigin);
+          const res = await s.fetch(exchangeUrl.toString(), {
             method: 'POST',
             credentials: 'include',
           });
