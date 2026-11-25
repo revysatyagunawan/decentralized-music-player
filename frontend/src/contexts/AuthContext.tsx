@@ -25,8 +25,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const CLIENT_ID = 'GN2jkUx67CSrwT17fI7Q_';
-const REDIRECT_URL = 'http://localhost:5173/';
+const CLIENT_ID = 'https://decentralized-music-player-theta.vercel.app/clientid.jsonld';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
