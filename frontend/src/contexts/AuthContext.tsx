@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithIssuer = useCallback(async (issuer: string) => {
     await login({
       oidcIssuer: issuer,
-      redirectUrl: REDIRECT_URL,
+      redirectUrl: `${window.location.origin}/`,
       clientId: CLIENT_ID,
     });
   }, []);
