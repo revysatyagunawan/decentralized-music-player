@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://decentralized-music-player-480e9481f348.herokuapp.com/api/$1"
+    }
+  ]
+}
