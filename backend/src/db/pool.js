@@ -1,8 +1,8 @@
 import pg from 'pg';
-import { config } from '../config/index.js';
+import { databaseConnectionConfig } from './connection.js';
 
 export const pool = new pg.Pool({
-  connectionString: config.DATABASE_URL,
+  ...databaseConnectionConfig,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,

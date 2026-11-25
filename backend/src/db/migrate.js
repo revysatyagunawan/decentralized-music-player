@@ -2,14 +2,14 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
-import { config } from '../config/index.js';
+import { databaseConnectionConfig } from './connection.js';
 import { logger } from '../utils/logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(__dirname, '..', '..', 'migrations');
 
 async function migrate() {
-  const client = new pg.Client({ connectionString: config.DATABASE_URL });
+  const client = new pg.Client(databaseConnectionConfig);
   await client.connect();
 
   try {
